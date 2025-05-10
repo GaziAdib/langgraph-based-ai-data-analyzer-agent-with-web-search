@@ -210,6 +210,39 @@ def router(state: Dict[str, any]) -> Literal["analyze_documents", "answer_from_k
 
 
 
+def create_workflow() -> Graph:
+    """Create and compile the LangGraph workflow."""
+    workflow = Graph()
+
+    workflow.add_node('analyze_documents', analyse_documents)
+    workflow.add_node('answer_from_knowledge', answer_from_knowledge)
+    workflow.add_node('answer_from_web', answer_from_web)
+
+    workflow.set_entry_point('router')
+
+    workflow.add_conditional_edges(
+        "router",
+        router,
+        {
+            "analyze_documents" : "analyze_documents",
+            "answer_from_knowledge" : "answer_from_knowledge",
+            "answer_from_web": "answer_from_web",
+            "end": END,
+        }
+    )
+
+    workflow.add_edge("analyze_documents", END)
+    workflow.add_edge("answer_from_knowledge", "router")
+    workflow.add_edge("answer_from_web", END)
+    return workflow.compile()
+
+
+
+# Initialize workflow
+workflow = create_workflow()
+
+
+
 
 
 
