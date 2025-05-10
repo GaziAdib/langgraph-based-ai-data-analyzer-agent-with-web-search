@@ -2,6 +2,7 @@ import os
 from typing import Dict, Any, List, Optional, Literal
 import streamlit as st
 import tempfile
+from langchain_core.runnables import RunnablePassthrough
 from langgraph.graph import Graph, END
 from langchain_groq import ChatGroq
 from langchain_community.document_loaders import (
@@ -12,7 +13,7 @@ from langchain_community.document_loaders import (
     UnstructuredFileLoader
 )
 from langchain_community.tools.tavily_search import TavilySearchResults
-# from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
@@ -40,8 +41,6 @@ def initialize_components():
     return search_tool, llm
 
 llm, search_tool = initialize_components()
-
-
 
 
 def process_uploaded_files(uploaded_files: List) -> str:
@@ -87,7 +86,130 @@ def process_uploaded_files(uploaded_files: List) -> str:
 
 
 
+
+
+# Prompt templates
+DOCUMENT_ANALYSIS_PROMPT = ChatPromptTemplate.from_template("""
+You are an expert data analyst. Analyze these documents:
+
+DOCUMENTS:
+{documents}
+
+INSTRUCTIONS:
+1. Identify key information and patterns
+2. Provide a detailed summary
+3. Format in markdown with headings
+
+ANALYSIS:
+""")
+
+DIRECT_ANSWER_PROMPT = ChatPromptTemplate.from_template("""
+Answer the question based on your knowledge.
+
+QUESTION:
+{question}
+
+If you don't know, say "I don't know" - don't make up answers.
+Format your response in markdown.
+
+ANSWER:
+""")
+
+WEB_SEARCH_PROMPT = ChatPromptTemplate.from_template("""
+Answer using these web results:
+
+QUESTION: {question}
+
+RESULTS:
+{search_results}
+
+INSTRUCTIONS:
+1. Synthesize the information
+2. Cite sources when possible
+3. If results don't help, say so
+
+ANSWER:
+""")
+
+
+
+
+
 # Creating Nodes
+
+
+def analyse_documents(state: Dict[str, any]) -> Dict[str, Any]:
+    """Node for document analysis."""
+    documents = state.get('documents', '')
+
+    if not documents:
+        return {"analysis": "No documents provided"}
+    
+    chain = (
+        {'documents': RunnablePassthrough()}
+
+        | DOCUMENT_ANALYSIS_PROMPT
+        | llm
+        | StrOutputParser()
+    )
+
+    analysis = chain.invoke(documents)
+    return {"analysis": analysis}
+
+
+def answer_from_knowledge(state: Dict[str, Any]) -> Dict[str, Any]:
+    """Node for answering from LLM's knowledge."""
+    question = state.get("question", "")
+    
+    chain = (
+        {"question": RunnablePassthrough()}
+        | DIRECT_ANSWER_PROMPT
+        | llm
+        | StrOutputParser()
+    )
+    
+    answer = chain.invoke(question)
+    return {"answer": answer}
+
+
+
+def answer_from_web(state: Dict[str, any]) -> Dict[str, any]:
+    """Node for answering from web search"""
+    question = state.get('question', '')
+
+    search_results = search_tool.invoke({'query': question})
+
+    chain = (
+        {
+            "question": RunnablePassthrough(),
+            "search_results": RunnablePassthrough()
+        }
+        | WEB_SEARCH_PROMPT
+        | llm
+        | StrOutputParser()
+    )
+
+    answer = chain.invoke({
+        "question": question,
+        "search_results": search_results
+    })
+    return {"answer": answer}
+
+
+
+def router(state: Dict[str, any]) -> Literal["analyze_documents", "answer_from_knowledge", "answer_from_web", "end"]:
+    """Router node to decide the flow."""
+    if state.get("documents") and not state.get("question"):
+        return 'analyze_documents'
+    elif state.get('question'):
+        if "don't know" in state.get('answer', '').lower():
+            return "answer_from_web"
+        return "end"
+    else:
+        return "end"
+
+
+
 
 
 
