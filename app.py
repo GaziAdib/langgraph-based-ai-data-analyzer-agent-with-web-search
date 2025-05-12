@@ -26,7 +26,6 @@ from langchain_core.rate_limiters import InMemoryRateLimiter
 st.set_page_config(page_title="Documents Analyst", page_icon="📄")
 st.title("📄Advanced Document Analysts")
 
-
 # Rate Limit
 
 rate_limiter = InMemoryRateLimiter(
@@ -36,12 +35,22 @@ rate_limiter = InMemoryRateLimiter(
 )
 
 
+model_options = [
+    "llama-3.1-8b-instant",
+    "llama3-70b-8192",
+    "deepseek-r1-distill-llama-70b"
+]
+
+model_name = st.selectbox("Select LLM Model", model_options, index=model_options.index("llama3-70b-8192"))
+
+
 
 # Configuration
 # llama3-70b-8192
-MODEL_NAME = "llama3-70b-8192"
+#MODEL_NAME = "llama3-70b-8192"
+MODEL_NAME=model_name
 TEMPERATURE = 0.1
-MAX_TOKENS = 50
+MAX_TOKENS = 250
 TAVILY_MAX_RESULTS = 3
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
