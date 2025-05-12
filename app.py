@@ -40,6 +40,8 @@ model_options = [
     "deepseek-r1-distill-llama-70b"
 ]
 
+
+
 model_name = st.selectbox("Select LLM Model", model_options, index=model_options.index("llama3-70b-8192"))
 
 
@@ -48,7 +50,7 @@ model_name = st.selectbox("Select LLM Model", model_options, index=model_options
 #MODEL_NAME = "llama3-70b-8192"
 MODEL_NAME=model_name
 TEMPERATURE = 0.1
-MAX_TOKENS = 250
+MAX_TOKENS = 300
 TAVILY_MAX_RESULTS = 3
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
