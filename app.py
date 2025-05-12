@@ -1,5 +1,4 @@
 import os
-import time
 from typing import Dict, Any, List, Literal
 import streamlit as st
 from dotenv import load_dotenv
@@ -46,7 +45,6 @@ model_name = st.selectbox("Select LLM Model", model_options, index=model_options
 
 
 # Configuration
-# llama3-70b-8192
 #MODEL_NAME = "llama3-70b-8192"
 MODEL_NAME=model_name
 TEMPERATURE = 0.1
