@@ -1,8 +1,8 @@
 import os
-from typing import Dict, Any, List, Literal
-import streamlit as st
 from dotenv import load_dotenv
 load_dotenv()
+from typing import Dict, Any, List, Literal
+import streamlit as st
 
 import tempfile
 from langchain_core.runnables import RunnablePassthrough
